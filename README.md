@@ -1,4 +1,3 @@
-# SentinelX
 #  SentinelX: AI-Powered Continuous Behavioral Authentication
 
 "Security that never sleeps."
