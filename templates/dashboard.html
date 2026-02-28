@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Behavioral Authentication System</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .chart-box {
+            width: 45%;
+        }
+    </style>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container">
+
+        <header class="header">
+            <div class="header-row">
+                <div class="header-brand">
+                    <h1>🔐 Behavioral Authentication System</h1>
+                    <p class="subtitle">Secure authentication powered by AI-driven behavior analysis</p>
+                </div>
+                <div class="header-actions">
+                    <div class="user-badge">Signed in as <strong id="currentUser">{{ username }}</strong></div>
+                    <a href="/logout" class="btn btn-secondary">Logout</a>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="sidebar-layout">
+                <aside class="sidebar">
+                    <nav class="tabs">
+                        <button class="tab-btn active" data-tab="system-dashboard">
+                            <span class="tab-icon">📊</span>
+                            <span class="tab-label">System Dashboard</span>
+                        </button>
+                        <button class="tab-btn" data-tab="users">
+                            <span class="tab-icon">👥</span>
+                            <span class="tab-label">All Users</span>
+                        </button>
+                        <button class="tab-btn" data-tab="create-user">
+                            <span class="tab-icon">➕</span>
+                            <span class="tab-label">License Management</span>
+                        </button>
+                        <button class="tab-btn" data-tab="user-info">
+                            <span class="tab-icon">ℹ️</span>
+                            <span class="tab-label">View User Info</span>
+                        </button>
+                        <button class="tab-btn" data-tab="hwid-info">
+                            <span class="tab-icon">💻</span>
+                            <span class="tab-label">Your Device HWID</span>
+                        </button>
+                        <button class="tab-btn" data-tab="verify-hwid">
+                            <span class="tab-icon">🔍</span>
+                            <span class="tab-label">Verify Remote HWID</span>
+                        </button>
+                        <button class="tab-btn" data-tab="enroll-user">
+                            <span class="tab-icon">🧠</span>
+                            <span class="tab-label">Enroll User (AI)</span>
+                        </button>
+                        <button class="tab-btn" data-tab="authenticate">
+                            <span class="tab-icon">🔑</span>
+                            <span class="tab-label">Test Authentication</span>
+                        </button>
+                        <button class="tab-btn" data-tab="security-results">
+                            <span class="tab-icon">🛡️</span>
+                            <span class="tab-label">Security Results</span>
+                        </button>
+                        <button class="tab-btn" data-tab="documentation">
+                            <span class="tab-icon">📚</span>
+                            <span class="tab-label">Documentation</span>
+                        </button>
+                    </nav>
+                </aside>
+
+                <div class="tab-content">
+
+                    <div id="system-dashboard" class="tab-pane active">
+                        <div class="card">
+                            <h2>✅ Welcome to Behavioral Authentication</h2>
+                            <p>You have successfully authenticated using the Behavioral Authentication System. Your
+                                account is now secured with AI-powered behavior analysis.</p>
+                        </div>
+
+                        <div class="card">
+                            <h2>🛡️ Security Score</h2>
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                                <div style="text-align: center;">
+                                    <div id="securityScore"
+                                        style="font-size: 3em; font-weight: bold; color: #06B6D4; margin: 20px 0;">--
+                                    </div>
+                                    <div style="font-size: 1.2em; color: #94A3B8;">Overall Security</div>
+                                    <div id="scoreBar"
+                                        style="margin-top: 15px; height: 8px; background: #1E3A5F; border-radius: 4px; overflow: hidden;">
+                                        <div id="scoreBarFill"
+                                            style="height: 100%; background: linear-gradient(90deg, #10B981, #06B6D4); width: 0%; transition: width 1s ease;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h2>📊 Your Account Information</h2>
+                            <div id="userInfo" class="user-info-details">
+                                <p><strong>Username:</strong> <span id="infoUsername">Loading...</span></p>
+                                <p><strong>Authentication Method:</strong> <span id="infoMethod">Behavioral
+                                        Analysis</span></p>
+                                <p><strong>Status:</strong> <span id="infoStatus">Active</span></p>
+                                <p><strong>Enrollment Status:</strong> <span id="infoEnrolled">Not Enrolled</span></p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h2>📈 Activity Summary (Last 30 Days)</h2>
+                            <div
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                                <div class="status-item">
+                                    <div class="status-label">Total Activities</div>
+                                    <div class="status-value" id="totalActivities">0</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Login Attempts</div>
+                                    <div class="status-value" id="loginAttempts">0</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Success Rate</div>
+                                    <div class="status-value" id="successRate">0%</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Avg Behavioral Score</div>
+                                    <div class="status-value" id="avgBehaviorScore">--</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h2>🔓 Recent Login History</h2>
+                            <div id="loginHistory" style="max-height: 300px; overflow-y: auto;">
+                                <p class="loading">Loading login history...</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h2>📋 Recent Activities</h2>
+                            <div id="recentActivities" style="max-height: 300px; overflow-y: auto;">
+                                <p class="loading">Loading activities...</p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div id="users" class="tab-pane">
+                        <div class="card">
+                            <h2>👥 Registered Users</h2>
+                            <div id="usersList" style="max-height: 400px; overflow-y: auto;">
+                                <p class="loading">Loading users...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="create-user" class="tab-pane">
+                        <div class="card" style="margin-bottom: 20px;">
+                            <h2>➕ Generate User License</h2>
+                            <div class="form-section">
+                                <h3>Assign License to Username</h3>
+                                <form id="createUserForm" class="form-group">
+                                    <input type="text" id="newUsername" placeholder="Enter username" required>
+                                    <button type="submit" class="btn btn-primary">Generate License Key</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card" id="licenseSection" style="margin-bottom: 20px; display: none;">
+                            <h2>📋 All Generated Licenses</h2>
+                            <div id="licensesList" class="users-list" style="max-height: 400px; overflow-y: auto;">
+                                <p class="loading">Loading licenses...</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h2>🔍 Check License Status</h2>
+                            <div class="form-section">
+                                <h3>Lookup Expiry & Status</h3>
+                                <form id="checkLicenseForm" class="form-group">
+                                    <input type="text" id="lookupLicenseKey"
+                                        placeholder="Enter License Key (e.g., LIC-XXXXXXXXXX)" required>
+                                    <button type="submit" class="btn btn-secondary">Check Status</button>
+                                </form>
+                                <div id="licenseStatusResult" class="result-message" style="margin-top: 15px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="verify-hwid" class="tab-pane">
+                        <div class="card">
+                            <h2>🔍 Verify Remote Device HWID</h2>
+                            <div class="form-section">
+                                <h3>Verify Device</h3>
+                                <form id="verifyHwidForm" class="form-group">
+                                    <input type="text" id="hwidUsername" placeholder="Enter username" required>
+                                    <button type="submit" class="btn btn-warning">Verify Device</button>
+                                </form>
+                                <div id="hwidVerifyResult" class="result-message"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="enroll-user" class="tab-pane">
+                        <div class="card">
+                            <h2>🧠 Enroll User (Create Behavioral Profile)</h2>
+                            <div class="form-section">
+                                <h3>AI Training</h3>
+                                <form id="enrollForm" class="form-group">
+                                    <input type="text" id="enrollUsername" placeholder="Enter username" required>
+                                    <input type="number" id="enrollSessions"
+                                        placeholder="Number of sessions (default: 5)" value="5" min="1" max="10">
+                                    <input type="number" id="enrollDuration"
+                                        placeholder="Session duration in seconds (default: 30)" value="30" min="5"
+                                        max="300">
+                                    <button type="submit" class="btn btn-success">Start Enrollment</button>
+                                </form>
+                                <div id="enrollResult" class="result-message"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="authenticate" class="tab-pane">
+                        <div class="card">
+                            <h2>🔑 Authenticate User (Login Test)</h2>
+                            <div class="form-section">
+                                <h3>Manual Testing</h3>
+                                <form id="authenticateForm" class="form-group">
+                                    <input type="text" id="authUsername" placeholder="Enter username" required>
+                                    <input type="number" id="authDuration"
+                                        placeholder="Session duration in seconds (default: 30)" value="30" min="5"
+                                        max="300">
+                                    <button type="submit" class="btn btn-info">Authenticate User</button>
+                                </form>
+                                <div id="authResult" class="result-message"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="user-info" class="tab-pane">
+                        <div class="card">
+                            <h2>ℹ️ My License Users Info</h2>
+                            <p style="color: #94A3B8; margin-bottom: 15px;">Automated detailed overview of all users
+                                authenticating under your managed licenses.</p>
+
+                            <div id="myLicenseUsersInfoList" class="users-list"
+                                style="max-height: 500px; overflow-y: auto;">
+                                <p class="loading">Loading your license users...</p>
+                            </div>
+
+                            <div class="form-section"
+                                style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                                <h3>Lookup Specific Profile</h3>
+                                <form id="userInfoForm" class="form-group">
+                                    <input type="text" id="infoUsername" placeholder="Enter username" required>
+                                    <button type="submit" class="btn btn-secondary">View Info</button>
+                                </form>
+                                <div id="userInfoResult" class="user-info-result" style="margin-top: 15px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="hwid-info" class="tab-pane">
+                        <div class="card">
+                            <h2>[HW] Your Device Hardware ID (HWID)</h2>
+                            <div id="hwidInfo" class="hwid-info">
+                                <p class="loading">Loading HWID information...</p>
+                            </div>
+                            <button class="btn btn-secondary" id="refreshHwidBtn" onclick="loadCurrentHWID()">Refresh
+                                HWID</button>
+                        </div>
+                    </div>
+
+                    <div id="security-results" class="tab-pane">
+                        <div class="card">
+                            <h2>🛡️ Security & Fraud Evaluation Results</h2>
+                            <p>View AI behavioral detection and fraud assessment scores for users.</p>
+
+                            <div class="form-section">
+                                <h3>Inspect User Security</h3>
+                                <form id="inspectSecurityForm" class="form-group">
+                                    <input type="text" id="inspectUsername" placeholder="Enter username" required>
+                                    <button type="submit" class="btn btn-warning">View Report</button>
+                                </form>
+                                <div id="securityReportResult" class="result-message" style="margin-top: 20px;"></div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3>Recent Security Blocks (Fraud / Bot Detected)</h3>
+                                <div id="securityBlocksList" class="users-list">
+                                    <p class="loading">Loading recent blocks...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="documentation" class="tab-pane">
+                        <div class="card">
+                            <h2>ℹ️ Behavioral Authentication Features</h2>
+                            <ul class="info-list">
+                                <li>🔒 AI-powered behavior analysis (23 features)</li>
+                                <li>⌨️ Keystroke dynamics detection</li>
+                                <li>🖱️ Mouse movement pattern analysis</li>
+                                <li>🤖 Isolation Forest ML algorithm</li>
+                                <li>👥 Multi-user support</li>
+                                <li>📊 Real-time activity tracking</li>
+                                <li>🛡️ Enhanced security scoring</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>🔐 AI-Based Behavioral Authentication System | Powered by Machine Learning © 2026</p>
+        </footer>
+    </div>
+    <script src="/static/js/behavioral_collector.js?v=2"></script>
+    <script src="/static/js/script.js?v=2"></script>
+    <script>
+       
+        let ws = null;
+        function initWebSocket() {
+            try {
+                ws = io();
+                ws.on('connected', (data) => {
+                    console.log('[WebSocket] Connected:', data);
+                });
+                ws.on('dashboard_update', (data) => {
+                    console.log('[WebSocket] Update received:', data);
+                   
+                    if (data.security_score !== undefined) {
+                        document.getElementById('securityScore').textContent = data.security_score.toFixed(0);
+                        document.getElementById('scoreBarFill').style.width = data.security_score + '%';
+                    }
+                   
+                    if (data.stats) {
+                        document.getElementById('totalActivities').textContent = data.stats.total_activities;
+                        document.getElementById('loginAttempts').textContent = data.stats.successful_logins;
+                        document.getElementById('successRate').textContent = data.stats.success_rate.toFixed(0) + '%';
+                    }
+                });
+                ws.on('error', (data) => {
+                    console.error('[WebSocket] Error:', data);
+                });
+            } catch (e) {
+                console.warn('[WebSocket] Not available, using polling');
+            }
+        }
+
+       
+        function requestLiveUpdate() {
+            if (ws) {
+                ws.emit('request_live_update');
+            }
+        }
+
+       
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/dashboard/data');
+                const data = await response.json();
+
+                if (!data.success) {
+                    console.error('Failed to load dashboard data:', data.error);
+                    return;
+                }
+
+               
+                const user = data.user;
+                document.getElementById('infoUsername').textContent = user.username;
+                document.getElementById('infoEnrolled').textContent = user.enrolled ? '✅ Enrolled' : '❌ Not Enrolled';
+
+               
+                const score = user.security_score || 0;
+                document.getElementById('securityScore').textContent = score.toFixed(0);
+                document.getElementById('scoreBarFill').style.width = score + '%';
+
+               
+                const stats = data.stats;
+                document.getElementById('totalActivities').textContent = stats.total_activities;
+                document.getElementById('loginAttempts').textContent = stats.successful_logins;
+                document.getElementById('successRate').textContent = stats.success_rate.toFixed(0) + '%';
+                document.getElementById('avgBehaviorScore').textContent = stats.avg_behavioral_score.toFixed(1);
+
+               
+                if (data.login_history && data.login_history.length > 0) {
+                    const historyHtml = data.login_history.map(login => `
+                        <div class="user-item" style="margin-bottom: 10px;">
+                            <div style="flex: 1;">
+                                <div style="color: #06B6D4; font-weight: bold;">${login.success ? '✅ Success' : '❌ Failed'}</div>
+                                <div style="font-size: 0.9em; color: #94A3B8;">${new Date(login.timestamp).toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                    document.getElementById('loginHistory').innerHTML = historyHtml;
+                } else {
+                    document.getElementById('loginHistory').innerHTML = '<p style="color: #94A3B8;">No login history available</p>';
+                }
+
+               
+                if (data.recent_activities && data.recent_activities.length > 0) {
+                    const activitiesHtml = data.recent_activities.map(activity => `
+                        <div class="user-item" style="margin-bottom: 10px;">
+                            <div style="flex: 1;">
+                                <div style="color: #06B6D4; font-weight: bold;">${activity.type.toUpperCase()}</div>
+                                <div style="font-size: 0.9em; color: #94A3B8;">${new Date(activity.timestamp).toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                    document.getElementById('recentActivities').innerHTML = activitiesHtml;
+                } else {
+                    document.getElementById('recentActivities').innerHTML = '<p style="color: #94A3B8;">No activities available</p>';
+                }
+
+               
+                if (data.all_users && data.all_users.length > 0) {
+                    const currentUsername = data.user.username;
+                    const yourUsers = [];
+                    const otherUsers = [];
+
+                    data.all_users.forEach(user => {
+                        let badgeHtml = '';
+
+                       
+                        if (user.username.toLowerCase() === currentUsername.toLowerCase()) {
+                            badgeHtml = `<span style="background: rgba(59, 130, 246, 0.2); color: #3B82F6; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; margin-left: 8px;">👤 You (${user.license_key ? 'License: ' + user.license_key : 'Direct'})</span>`;
+                            yourUsers.unshift({ ...user, badgeHtml });
+                            return;
+                        }
+
+                       
+                        if (user.license_owner && user.license_owner.toLowerCase() === currentUsername.toLowerCase()) {
+                            badgeHtml = `<span style="background: rgba(16, 185, 129, 0.2); color: #10B981; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; margin-left: 8px;">🔑 Logged in with your License: ${user.license_key || 'Unknown'}</span>`;
+                            yourUsers.push({ ...user, badgeHtml });
+                        } else {
+                           
+                            if (user.license_owner) {
+                                badgeHtml = `<span style="background: rgba(245, 158, 11, 0.2); color: #F59E0B; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; margin-left: 8px;">🔑 Belongs to License Owner: ${user.license_owner}</span>`;
+                            } else {
+                                badgeHtml = `<span style="background: rgba(156, 163, 175, 0.2); color: #9CA3AF; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; margin-left: 8px;">👤 Direct User</span>`;
+                            }
+                            otherUsers.push({ ...user, badgeHtml });
+                        }
+                    });
+
+                    const generateUserHtml = (user) => `
+                        <div class="user-item" style="margin-bottom: 15px; padding: 10px; background: #0D1B2A; border-radius: 6px; border-left: 3px solid #06B6D4;">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div style="flex: 1;">
+                                    <div style="color: #06B6D4; font-weight: bold; margin-bottom: 5px; display: flex; align-items: center;">
+                                        ${user.username} ${user.badgeHtml}
+                                    </div>
+                                    <div style="font-size: 0.85em; color: #94A3B8;">
+                                        Created: ${new Date(user.created_at).toLocaleDateString()}
+                                    </div>
+                                    <div style="font-size: 0.85em; color: #94A3B8;">
+                                        Status: ${user.enrolled ? '✅ Enrolled' : '⏳ Not Enrolled'}
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="background: #1E3A5F; padding: 8px 12px; border-radius: 4px;">
+                                        <div style="font-size: 1.2em; font-weight: bold; color: #06B6D4;">${user.security_score.toFixed(0)}</div>
+                                        <div style="font-size: 0.75em; color: #94A3B8;">Security</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    let finalHtml = '';
+
+                    if (yourUsers.length > 0) {
+                        finalHtml += `
+                            <div style="margin-bottom: 25px;">
+                                <h3 style="color: #10B981; border-bottom: 1px solid rgba(16, 185, 129, 0.3); padding-bottom: 8px; margin-bottom: 15px;">⭐️ You & Your License Users (${yourUsers.length})</h3>
+                                ${yourUsers.map(generateUserHtml).join('')}
+                            </div>
+                        `;
+                    }
+
+                    if (otherUsers.length > 0) {
+                        finalHtml += `
+                            <div style="margin-bottom: 25px;">
+                                <h3 style="color: #94A3B8; border-bottom: 1px solid rgba(148, 163, 184, 0.3); padding-bottom: 8px; margin-bottom: 15px;">👥 Other Registered Users (${otherUsers.length})</h3>
+                                ${otherUsers.map(generateUserHtml).join('')}
+                            </div>
+                        `;
+                    }
+
+                    document.getElementById('usersList').innerHTML = finalHtml || '<p style="color: #94A3B8;">No users registered yet</p>';
+
+                   
+                    const myLicenseUsersListEl = document.getElementById('myLicenseUsersInfoList');
+                    if (myLicenseUsersListEl) {
+                        if (yourUsers.length > 0) {
+                            myLicenseUsersListEl.innerHTML = yourUsers.map(user => `
+                                <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border-left: 4px solid #10B981; margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;">
+                                        <h4 style="margin: 0; color: #10B981; font-size: 1.1em;">👤 ${user.username}</h4>
+                                        ${user.badgeHtml}
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em; color: #cbd5e1;">
+                                        <p style="margin: 0;"><strong>Status:</strong> ${user.status || 'Active'}</p>
+                                        <p style="margin: 0;"><strong>Enrolled:</strong> ${user.enrolled ? '<span style="color:#10B981;">[OK] Yes</span>' : '<span style="color:#EF4444;">[NO] No</span>'}</p>
+                                        <p style="margin: 0;"><strong>Created:</strong> ${user.created_at ? new Date(user.created_at).toLocaleString() : 'N/A'}</p>
+                                        <p style="margin: 0;"><strong>Security Score:</strong> <span style="color:#06B6D4; font-weight:bold;">${user.security_score ? user.security_score.toFixed(1) : '0.0'}</span> / 100</p>
+                                        <div style="grid-column: span 2; margin-top: 5px;">
+                                            <strong>Device HWID:</strong> 
+                                            <code style="display: block; background: rgba(59,130,246,0.1); padding: 6px; border-radius: 4px; word-break: break-all; margin-top: 4px; color: #60A5FA;">${user.hwid || 'No Device Registered'}</code>
+                                        </div>
+                                    </div>
+                                    <div style="margin-top: 15px; text-align: right;">
+                                        <button onclick="viewUserInfo('${user.username}')" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.85em;">🔍 Full Lookup</button>
+                                        <button onclick="inspectUserSecurity('${user.username}'); document.querySelector('[data-tab=security-results]').click();" class="btn btn-warning" style="padding: 5px 10px; font-size: 0.85em;">🛡️ Inspect Security</button>
+                                    </div>
+                                </div>
+                            `).join('');
+                        } else {
+                            myLicenseUsersListEl.innerHTML = '<p style="color: #94A3B8;">No users are currently linked to your licenses.</p>';
+                        }
+                    }
+
+                } else {
+                    document.getElementById('usersList').innerHTML = '<p style="color: #94A3B8;">No users registered yet</p>';
+                    const myLicenseUsersListEl = document.getElementById('myLicenseUsersInfoList');
+                    if (myLicenseUsersListEl) myLicenseUsersListEl.innerHTML = '<p style="color: #94A3B8;">No users found.</p>';
+                }
+
+               
+                if (data.licenses && data.licenses.length > 0) {
+                    const licenseHtml = data.licenses.map(license => {
+                        const expiresAtRaw = license.expires_at || null;
+                        const expiresText = (expiresAtRaw && expiresAtRaw !== 'Never') ? new Date(expiresAtRaw).toLocaleDateString() : 'Never';
+                        let statusLabel = 'Active';
+                        if (!license.active) {
+                            statusLabel = 'Inactive';
+                        } else if (expiresAtRaw && expiresAtRaw !== 'Never' && new Date(expiresAtRaw) < new Date()) {
+                            statusLabel = 'Expired';
+                        }
+                        const statusColor = statusLabel === 'Active' ? '#10B981' : (statusLabel === 'Expired' ? '#F59E0B' : '#EF4444');
+                        const activeUsers = (typeof license.active_users === 'number') ? license.active_users : (license.active_users ? license.active_users.length : 0);
+                        const activeUserNames = Array.isArray(license.active_users) && license.active_users.length > 0 ?
+                            `<span style="color: #06B6D4; margin-left: 5px;">(${license.active_users.join(', ')})</span>` : '';
+
+                        return `
+                        <div style="background: #0D1B2A; padding: 15px; border-radius: 6px; border-left: 3px solid #06B6D4; margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                                <div style="flex: 1;">
+                                    <div style="color: #06B6D4; font-weight: bold; font-size: 1.1em; word-break: break-all;">${license.key}</div>
+                                    <div style="color: #94A3B8; font-size: 0.9em;">Owner: ${license.owner}</div>
+                                </div>
+                                <div style="text-align: right; display: flex; gap: 10px; align-items: start;">
+                                    <span style="background: ${statusColor}; color: white; padding: 4px 8px; border-radius: 3px; font-size: 0.85em; white-space: nowrap;">
+                                        ${statusLabel}
+                                    </span>
+                                    <button onclick="deleteLicense('${license.key}')" class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.85em; white-space: nowrap;">🗑️ Delete</button>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.9em; color: #94A3B8; line-height: 1.6;">
+                                <div>Tier: ${String(license.tier || 'basic').toUpperCase()}</div>
+                                <div>Users Using It: ${activeUsers} / ${license.max_users} ${activeUserNames}</div>
+                                <div>Expiry Date: ${expiresText}</div>
+                            </div>
+                        </div>`;
+                    }).join('');
+
+                    document.getElementById('licensesList').innerHTML = licenseHtml;
+                    document.getElementById('licenseSection').style.display = 'block';
+                } else {
+                    document.getElementById('licensesList').innerHTML = '<p style="color: #94A3B8;">No licenses created yet</p>';
+                    document.getElementById('licenseSection').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+       
+        function generateLicense() {
+            const form = document.getElementById('licenseForm');
+            if (form.style.display === 'none') {
+                form.style.display = 'block';
+            } else {
+                form.style.display = 'none';
+            }
+        }
+
+        function cancelLicenseForm() {
+            document.getElementById('licenseForm').style.display = 'none';
+        }
+
+        async function submitGenerateLicense() {
+            const maxUsers = document.getElementById('maxUsers').value || 1;
+            const expiresInDays = document.getElementById('expiresInDays').value || null;
+            const tier = document.getElementById('licenseTier').value;
+
+            try {
+                const response = await fetch('/api/licenses/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        max_users: parseInt(maxUsers),
+                        expires_in_days: expiresInDays ? parseInt(expiresInDays) : null,
+                        tier: tier
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                   
+                    const container = document.getElementById('generatedKeyContainer');
+                    const keyEl = document.getElementById('generatedKey');
+                    const msgEl = document.getElementById('generatedKeyMsg');
+                    keyEl.textContent = data.license_key;
+                    msgEl.style.display = 'none';
+                    container.style.display = 'block';
+                    document.getElementById('licenseForm').style.display = 'none';
+                    loadDashboardData();
+                } else {
+                    alert(`❌ Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Failed to generate license: ${error.message}`);
+            }
+        }
+
+        async function deleteLicense(key) {
+            if (!confirm(`Are you sure you want to permanently delete this license?\n\n${key}`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/licenses/delete/${key}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ License deleted successfully');
+                    loadDashboardData();
+                } else {
+                    alert(`❌ Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Failed to delete license: ${error.message}`);
+            }
+        }
+
+       
+        document.addEventListener('click', (e) => {
+            if (e.target && (e.target.id === 'copyKeyBtn')) {
+                const keyText = document.getElementById('generatedKey').textContent || '';
+                if (!keyText) return;
+                navigator.clipboard.writeText(keyText).then(() => {
+                    const msgEl = document.getElementById('generatedKeyMsg');
+                    msgEl.style.display = 'block';
+                    setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
+                }).catch(() => {
+                    alert('Failed to copy to clipboard');
+                });
+            }
+        });
+
+       
+        document.addEventListener('DOMContentLoaded', () => {
+            initWebSocket();
+            loadDashboardData();
+        });
+
+       
+        setInterval(() => {
+            loadDashboardData();
+            requestLiveUpdate();
+        }, 15000);
+    </script>
+</body>
+
+</html>

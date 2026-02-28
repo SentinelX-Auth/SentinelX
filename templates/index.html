@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Behavioral Authentication System</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .chart-box {
+            width: 45%;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="container">
+
+        <header class="header">
+            <div class="header-row">
+                <div class="header-brand">
+                    <h1>Behavioral Authentication</h1>
+                    <p class="subtitle">AI-Powered security using keystroke & mouse behavior</p>
+                </div>
+                <div class="header-actions">
+                    <div class="user-badge">Signed in as <strong>{{ session.get('user') or 'Guest' }}</strong></div>
+                    <a href="/logout" class="btn btn-secondary">Logout</a>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+
+            <div class="sidebar-layout">
+                <aside class="sidebar">
+                    <nav class="tabs">
+                        <button class="tab-btn active" data-tab="dashboard">
+                            <span class="tab-icon">📊</span>
+                            <span class="tab-label">System Dashboard</span>
+                        </button>
+                        <button class="tab-btn" data-tab="users">
+                            <span class="tab-icon">👥</span>
+                            <span class="tab-label">All Users</span>
+                        </button>
+                        <button class="tab-btn" data-tab="create-user">
+                            <span class="tab-icon">➕</span>
+                            <span class="tab-label">Create User</span>
+                        </button>
+                        <button class="tab-btn" data-tab="user-info">
+                            <span class="tab-icon">ℹ️</span>
+                            <span class="tab-label">View User Info</span>
+                        </button>
+                        <button class="tab-btn" data-tab="hwid-info">
+                            <span class="tab-icon">�</span>
+                            <span class="tab-label">Your Device HWID</span>
+                        </button>
+                        <button class="tab-btn" data-tab="verify-hwid">
+                            <span class="tab-icon">🔍</span>
+                            <span class="tab-label">Verify Remote HWID</span>
+                        </button>
+                        <button class="tab-btn" data-tab="enroll-user">
+                            <span class="tab-icon">🧠</span>
+                            <span class="tab-label">Enroll User (AI)</span>
+                        </button>
+                        <button class="tab-btn" data-tab="authenticate">
+                            <span class="tab-icon">🔑</span>
+                            <span class="tab-label">Test Authentication</span>
+                        </button>
+                        <button class="tab-btn" data-tab="security-results">
+                            <span class="tab-icon">🛡️</span>
+                            <span class="tab-label">Security Results</span>
+                        </button>
+                        <button class="tab-btn" data-tab="documentation">
+                            <span class="tab-icon">📚</span>
+                            <span class="tab-label">Documentation</span>
+                        </button>
+                    </nav>
+                </aside>
+
+                <div class="tab-content">
+
+                    <div id="dashboard" class="tab-pane active">
+                        <div class="card">
+                            <h2>[SYS] System Status</h2>
+                            <div class="status-grid">
+                                <div class="status-item">
+                                    <div class="status-label">Total Users</div>
+                                    <div class="status-value" id="totalUsers">0</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">System Status</div>
+                                    <div class="status-value" id="systemStatus">🟢 Running</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Features Tracked</div>
+                                    <div class="status-value">23</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">ML Algorithm</div>
+                                    <div class="status-value">Isolation Forest</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h2>📋 Quick Info</h2>
+                            <ul class="info-list">
+                                <li><strong>Keystroke Features (10):</strong> Analyze typing patterns including
+                                    inter-keystroke intervals and key frequencies</li>
+                                <li><strong>Mouse Features (13):</strong> Monitor movement velocity, distance, and
+                                    acceleration patterns</li>
+                                <li><strong>Detection Method:</strong> Isolation Forest anomaly detection for secure
+                                    authentication</li>
+                                <li><strong>Architecture:</strong> Data Collection → Feature Extraction → ML Model →
+                                    Authentication Decision</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div id="hwid-info" class="tab-pane">
+                        <div class="card">
+                            <h2>[HW] Your Device Hardware ID (HWID)</h2>
+                            <div id="hwidInfo" class="hwid-info">
+                                <p class="loading">Loading HWID information...</p>
+                            </div>
+                            <button class="btn btn-secondary" id="refreshHwidBtn" onclick="loadCurrentHWID()">Refresh
+                                HWID</button>
+                        </div>
+                    </div>
+
+                    <div id="users" class="tab-pane">
+                        <div class="card">
+                            <h2>👥 All Users</h2>
+                            <div class="form-section">
+                                <div id="usersList" class="users-list">
+                                    <p class="loading">Loading users...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="create-user" class="tab-pane">
+                        <div class="card">
+                            <h2>➕ Create New User</h2>
+                            <div class="form-section">
+                                <h3>User Details</h3>
+                                <form id="createUserForm" class="form-group">
+                                    <input type="text" id="newUsername" placeholder="Enter username" required>
+                                    <button type="submit" class="btn btn-primary">Create User</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="verify-hwid" class="tab-pane">
+                        <div class="card">
+                            <h2>� Verify Remote Device HWID</h2>
+                            <div class="form-section">
+                                <h3>Verify Device</h3>
+                                <form id="verifyHwidForm" class="form-group">
+                                    <input type="text" id="hwidUsername" placeholder="Enter username" required>
+                                    <button type="submit" class="btn btn-warning">Verify Device</button>
+                                </form>
+                                <div id="hwidVerifyResult" class="result-message"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="enroll-user" class="tab-pane">
+                        <div class="card">
+                            <h2>🧠 Enroll User (Create Behavioral Profile)</h2>
+                            <div class="form-section">
+                                <h3>AI Training</h3>
+                                <form id="enrollForm" class="form-group">
+                                    <input type="text" id="enrollUsername" placeholder="Enter username" required>
+                                    <input type="number" id="enrollSessions"
+                                        placeholder="Number of sessions (default: 5)" value="5" min="1" max="10">
+                                    <input type="number" id="enrollDuration"
+                                        placeholder="Session duration in seconds (default: 30)" value="30" min="5"
+                                        max="300">
+                                    <button type="submit" class="btn btn-success">Start Enrollment</button>
+                                </form>
+                                <div id="enrollResult" class="result-message"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="authenticate" class="tab-pane">
+                        <div class="card">
+                            <h2>🔑 Authenticate User (Login Test)</h2>
+                            <div class="form-section">
+                                <h3>Manual Testing</h3>
+                                <form id="authenticateForm" class="form-group">
+                                    <input type="text" id="authUsername" placeholder="Enter username" required>
+                                    <input type="number" id="authDuration"
+                                        placeholder="Session duration in seconds (default: 30)" value="30" min="5"
+                                        max="300">
+                                    <button type="submit" class="btn btn-info">Authenticate User</button>
+                                </form>
+                                <div id="authResult" class="result-message"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="user-info" class="tab-pane">
+                        <div class="card">
+                            <h2>ℹ️ View User Info</h2>
+                            <div class="form-section">
+                                <h3>Lookup Profile</h3>
+                                <form id="userInfoForm" class="form-group">
+                                    <input type="text" id="infoUsername" placeholder="Enter username" required>
+                                    <button type="submit" class="btn btn-secondary">View Info</button>
+                                </form>
+                                <div id="userInfoResult" class="user-info-result"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="security-results" class="tab-pane">
+                        <div class="card">
+                            <h2>🛡️ Security & Fraud Evaluation Results</h2>
+                            <p>View AI behavioral detection and fraud assessment scores for users.</p>
+
+                            <div class="form-section">
+                                <h3>Inspect User Security</h3>
+                                <form id="inspectSecurityForm" class="form-group">
+                                    <input type="text" id="inspectUsername" placeholder="Enter username" required>
+                                    <button type="submit" class="btn btn-warning">View Report</button>
+                                </form>
+                                <div id="securityReportResult" class="result-message" style="margin-top: 20px;"></div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3>Recent Security Blocks (Fraud / Bot Detected)</h3>
+                                <div id="securityBlocksList" class="users-list">
+                                    <p class="loading">Loading recent blocks...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+                    <div id="documentation" class="tab-pane">
+                        <div class="card">
+                            <h2>📚 System Documentation</h2>
+
+                            <div class="doc-section">
+                                <h3>🔐 Hardware ID (HWID) Authentication</h3>
+                                <p>In addition to behavioral authentication, the system now includes Hardware ID
+                                    verification for device-level security:</p>
+                                <ul>
+                                    <li><strong>Device Fingerprinting:</strong> Unique identification based on hardware
+                                        components (CPU, Motherboard, MAC Address, etc.)</li>
+                                    <li><strong>Enrollment Lock:</strong> When you enroll, your device's HWID is
+                                        registered and locked to your account</li>
+                                    <li><strong>Access Control:</strong> Only devices with matching HWID can
+                                        authenticate for your account</li>
+                                    <li><strong>Prevents Account Hijacking:</strong> Even if someone has your password,
+                                        they cannot log in from a different device</li>
+                                    <li><strong>Multi-Layer Security:</strong> Combines behavioral biometrics + hardware
+                                        validation for maximum security</li>
+                                </ul>
+                            </div>
+
+                            <div class="doc-section">
+                                <p>This system uses artificial intelligence to authenticate users based on their unique
+                                    behavioral patterns:</p>
+                                <ol>
+                                    <li><strong>Data Collection:</strong> Captures keystroke dynamics (timing, pressure)
+                                        and mouse movements (velocity, acceleration)</li>
+                                    <li><strong>Feature Extraction:</strong> Extracts 23 behavioral features from
+                                        collected data</li>
+                                    <li><strong>Model Training:</strong> Uses Isolation Forest algorithm to build a
+                                        behavioral profile</li>
+                                    <li><strong>Authentication:</strong> Compares login behavior with stored profile to
+                                        detect anomalies</li>
+                                </ol>
+                            </div>
+
+                            <div class="doc-section">
+                                <h3>🔑 Key Features</h3>
+                                <ul>
+                                    <li>✨ AI-powered behavior analysis (23 features)</li>
+                                    <li>🎯 Keystroke dynamics detection</li>
+                                    <li>🖱️ Mouse movement pattern analysis</li>
+                                    <li>🤖 Isolation Forest ML algorithm</li>
+                                    <li>👥 Multi-user support</li>
+                                    <li>💾 Model persistence (save/load)</li>
+                                    <li>🔒 High-security authentication</li>
+                                </ul>
+                            </div>
+
+                            <div class="doc-section">
+                                <h3>📊 Behavioral Features Analyzed</h3>
+                                <div class="feature-grid">
+                                    <div class="feature-item">
+                                        <strong>Keystroke Features (10)</strong>
+                                        <ul>
+                                            <li>Inter-keystroke interval (mean, std, min, max)</li>
+                                            <li>Keystroke rate</li>
+                                            <li>Key frequency distribution</li>
+                                            <li>Unique keys pressed</li>
+                                        </ul>
+                                    </div>
+                                    <div class="feature-item">
+                                        <strong>Mouse Features (13)</strong>
+                                        <ul>
+                                            <li>Movement distance & velocity</li>
+                                            <li>Acceleration patterns</li>
+                                            <li>Movement speed statistics</li>
+                                            <li>Click patterns & frequency</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="doc-section">
+                                <h3>🚀 Quick Start Guide</h3>
+                                <pre><code>1. Go to "Users" tab and create a new user
+2. Go to "Operations" tab and enroll the user
+3. During enrollment, type naturally and move your mouse around
+4. After enrollment, you can authenticate by logging in
+5. The system will compare your behavior with your profile</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>🔐 AI-Based Behavioral Authentication System | Powered by Machine Learning</p>
+            <p style="font-size: 0.9em; opacity: 0.7;">© 2026 | All rights reserved</p>
+        </footer>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/static/js/script.js"></script>
+
+    <script>
+       
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/js/sw.js')
+                .then(() => console.log('Service Worker registered'))
+                .catch(err => console.warn('SW registration failed:', err));
+        }
+
+       
+        try {
+            const socket = io();
+            socket.on('connect', () => console.log('socket connected'));
+            socket.on('user_update', (data) => {
+                if (data && data.users) {
+                   
+                    if (typeof displayUsers === 'function') displayUsers(data.users);
+                    const el = document.getElementById('totalUsers');
+                    if (el) el.textContent = data.users.length;
+                }
+            });
+        } catch (e) {
+            console.warn('Socket.IO not available', e);
+        }
+    </script>
+</body>
+
+</html>

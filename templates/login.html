@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login — Behavioral Authentication System</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+
+<body>
+  <style>
+    .tabs {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 25px;
+      border-bottom: 2px solid rgba(6, 182, 212, 0.2);
+      padding-bottom: 12px;
+      justify-content: center;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--secondary-color);
+      font-size: 1.05rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 10px 16px;
+      border-radius: 6px 6px 0 0;
+      transition: all var(--transition-normal);
+      position: relative;
+    }
+
+    .tab-btn::after {
+      content: '';
+      position: absolute;
+      bottom: -14px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background-color: var(--primary-color);
+      transform: scaleX(0);
+      transition: transform var(--transition-normal);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(6, 182, 212, 0.05);
+    }
+
+    .tab-btn.active {
+      color: var(--primary-color);
+    }
+
+    .tab-btn.active::after {
+      transform: scaleX(1);
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
+
+  <main class="login-shell">
+    <div class="login-card">
+      <h1 style="text-align: center; margin-bottom: 8px;">Behavioral Authentication System</h1>
+      <p class="muted" style="text-align: center; margin-bottom: 25px;">Sign in to access your account or register a new
+        one</p>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="password">Password Login</button>
+        <button class="tab-btn" data-tab="register">Register</button>
+        <button class="tab-btn" data-tab="license">License Login</button>
+      </div>
+
+      
+      <form id="passwordForm" class="form-group tab-content active">
+        <input id="pwdUsername" name="username" placeholder="Username" required />
+        <input id="pwdPassword" name="password" type="password" placeholder="Password" required />
+        <button class="btn btn-primary" type="submit">Sign In</button>
+      </form>
+
+      
+      <form id="registerForm" class="form-group tab-content">
+        <input id="regUsername" name="username" placeholder="Choose a Username" required />
+        <input id="regPassword" name="password" type="password" placeholder="Choose a Password" required />
+        <button class="btn btn-success" type="submit">Create Account</button>
+      </form>
+
+      
+      <form id="licenseForm" class="form-group tab-content">
+        <input id="licUsername" name="username" placeholder="Username" required />
+        <input id="licenseKeyInput" name="licenseKey" placeholder="License Key (e.g., LIC-XXXXXXXXXX)" required />
+        <button class="btn btn-info" type="submit">Sign In with License</button>
+      </form>
+
+      <div id="msg" class="muted" style="margin-top:10px; color: #FCA5A5;"></div>
+    </div>
+  </main>
+
+  <script src="/static/js/behavioral_collector.js"></script>
+  <script>
+   
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const msg = document.getElementById('msg');
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+       
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+
+       
+        msg.textContent = '';
+
+       
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.getElementById(tabId + 'Form').classList.add('active');
+      });
+    });
+
+    function showMessage(text, isError = true) {
+      msg.textContent = (isError ? '❌ ' : '✅ ') + text;
+      msg.style.color = isError ? '#FCA5A5' : '#10B981';
+    }
+
+   
+    document.getElementById('licenseForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const u = document.getElementById('licUsername').value.trim();
+      const lkey = document.getElementById('licenseKeyInput').value.trim();
+
+      if (!u || !lkey) {
+        showMessage('Username and license key required');
+        return;
+      }
+
+      const behavioralData = behavioralCollector.extractFeatures();
+
+      try {
+        const r = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, license_key: lkey, use_license: true, behavioral_data: behavioralData })
+        });
+        const j = await r.json();
+        if (r.ok && j.success) {
+          showMessage(j.message, false);
+          setTimeout(() => window.location = '/', 1500);
+        } else {
+          showMessage(j.error || 'License login failed');
+        }
+      } catch (e) {
+        showMessage(e.message);
+      }
+    });
+
+   
+    document.getElementById('passwordForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const u = document.getElementById('pwdUsername').value.trim();
+      const p = document.getElementById('pwdPassword').value.trim();
+
+      if (!u || !p) {
+        showMessage('Username and password required');
+        return;
+      }
+
+      const behavioralData = behavioralCollector.extractFeatures();
+
+      try {
+        const r = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p, use_license: false, behavioral_data: behavioralData })
+        });
+        const j = await r.json();
+        if (r.ok && j.success) {
+          showMessage(j.message, false);
+          setTimeout(() => window.location = '/', 1500);
+        } else {
+          showMessage(j.error || 'Login failed');
+        }
+      } catch (e) {
+        showMessage(e.message);
+      }
+    });
+
+   
+    document.getElementById('registerForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const u = document.getElementById('regUsername').value.trim();
+      const p = document.getElementById('regPassword').value.trim();
+
+      if (!u || !p) {
+        showMessage('Username and password required');
+        return;
+      }
+
+      try {
+        const r = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const j = await r.json();
+        if (r.ok && j.success) {
+          let successMsg = j.message;
+          if (j.license_key) {
+            successMsg += ` Auto-generated License: ${j.license_key}`;
+          }
+          showMessage(successMsg, false);
+         
+          setTimeout(() => {
+            document.querySelector('[data-tab="password"]').click();
+            document.getElementById('pwdUsername').value = u;
+          }, 3000);
+        } else {
+          showMessage(j.error || 'Registration failed');
+        }
+      } catch (e) {
+        showMessage(e.message);
+      }
+    });
+
+   
+    document.addEventListener('DOMContentLoaded', () => {
+      behavioralCollector.startCollection();
+      console.log('Behavioral data collection started');
+    });
+  </script>
+</body>
+
+</html>
