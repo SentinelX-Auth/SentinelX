@@ -1,0 +1,9 @@
+{
+  "username": "1",
+  "hwid": "S-1-5-21-2689868374-4237346755-2023873278-1000",
+  "created_at": "2026-02-28 01:31:11.331845",
+  "enrolled": true,
+  "password_hash": "d8017c808c29d33ebdcc08f87a2378c94fe74dcc121d555205f9eedd404c883b",
+  "password_salt": "afd91b66d30d59c53f935b29ef050571",
+  "password_iterations": 100000
+}

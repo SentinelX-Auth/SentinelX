@@ -1,0 +1,26 @@
+{
+  "LIC-8CFF431E6963A437A280D368": {
+    "owner": "apptest",
+    "created_at": "2026-02-28T06:40:38.989756",
+    "expires_at": null,
+    "max_users": 10,
+    "tier": "pro",
+    "active_users": [
+      "Admin"
+    ],
+    "total_logins": 0,
+    "active": true
+  },
+  "LIC-7E2280A465ABA8DEF5498165": {
+    "owner": "1",
+    "created_at": "2026-02-28T06:45:04.724488",
+    "expires_at": null,
+    "max_users": 1,
+    "tier": "basic",
+    "active_users": [
+      "123"
+    ],
+    "total_logins": 1,
+    "active": true
+  }
+}
